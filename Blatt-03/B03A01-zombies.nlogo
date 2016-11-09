@@ -1,4 +1,4 @@
-turtles-own [infected energy isimmune]
+turtles-own [infected energy isimmune hasreproduced]
 
 
 to setup
@@ -31,11 +31,13 @@ to setup-turtles
       ; make the turtle a human
       set infected false
       set energy start-energy
+      set hasreproduced false
       set color grey
 
       ifelse(number-of-immunes > 0)[
         ;ifelse ((random(100)) < (immune-percentage - 1))[
         set isimmune true
+        set color green
         set number-of-immunes number-of-immunes - 1
         ;]
         ;[
@@ -53,6 +55,7 @@ to go
   ; let all turtles move around
   ask turtles [
     move
+    set hasreproduced false
   ]
 
   ; zombies attack humans if there are any on the same patch
@@ -63,14 +66,13 @@ to go
     set energy energy - 1
   ]
 
-  ask turtles with [infected = false] [
-    set energy energy + 1
-  ]
-
   tick
 
   check-death
-  reproduce
+
+  ask turtles with [infected = false] [
+    reproduce
+  ]
 
   ; stop the simulation if there aren't any turtles left
   if count turtles = (((population-size - ((initial-zombie-percentage * population-size) / 100)) * immune-percentage) / 100) [
@@ -86,15 +88,26 @@ to move
 end
 
 
+; one zombie bites one human
 to attack-human
-  ask turtles-here with [infected = true][
-    set energy energy + energy-gained
+  let unimmune-humans-here (count turtles-here with [infected = false and isimmune = false])
+  let i 0
+  ask turtles-here with [infected = true][ ;zombies
+    if i < unimmune-humans-here [
+      set energy energy + energy-gained ; zombie gains energy
+      set i (i + 1)
+    ]
   ]
-  ask turtles-here with [infected = false and isimmune = false][
-    ; transform the human into a zombie
-    set infected true
-    set color red
-    set energy start-energy
+  let zombies-here (count turtles-here with [infected = false])
+  let j 0
+  ask turtles-here with [infected = false and isimmune = false][ ;humans
+    if j < zombies-here [
+      set j (j + 1)
+      ; transform the human into a zombie
+      set infected true
+      set color red
+      set energy start-energy
+    ]
   ]
 end
 
@@ -105,22 +118,33 @@ to check-death
 end
 
 to reproduce
-  ask turtles with[infected = false] [
-    ask turtles-here with[infected = false] [
+  ask turtles-here with[infected = false and hasreproduced = false] [
+    let immunityFemale isimmune
+    ask turtles-here with[infected = false and hasreproduced = false] [
+      let immunityMale isimmune
+      let stopping false
       if(random 100  < chance-to-reproduce)[
-        if(energy > 50)[
         hatch 1 [
-          set energy (start-energy / 2)
-          set isimmune false
+          ifelse(immunityFemale = true and immunityMale = true and random 100 < immune-percentage) [
+            set isimmune true
+            set color green
+          ]
+          [
+            set isimmune false
+            set color grey
+          ]
+          set hasreproduced true
         ]
-        set energy energy - 25
-        ]
+        set hasreproduced true
+        set hasreproduced [true] of myself
+        set stopping true
+      ]
+      if(stopping = true)[
+        stop
       ]
     ]
   ]
 end
-
-
 
 
 
@@ -224,7 +248,7 @@ population-size
 population-size
 0
 500
-500
+197
 1
 1
 NIL
@@ -368,7 +392,7 @@ chance-to-reproduce
 chance-to-reproduce
 0
 100
-15
+10
 1
 1
 NIL
