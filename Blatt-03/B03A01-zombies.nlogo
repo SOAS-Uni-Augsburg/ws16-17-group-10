@@ -35,21 +35,15 @@ to setup-turtles
       set color grey
 
       ifelse(number-of-immunes > 0)[
-        ;ifelse ((random(100)) < (immune-percentage - 1))[
         set isimmune true
         set color green
         set number-of-immunes number-of-immunes - 1
-        ;]
-        ;[
-        ;  set isimmune false
-        ;]
       ]
-      [
-        set isimmune false
-      ]
+      [ set isimmune false ]
     ]
   ]
 end
+
 
 to go
   ; let all turtles move around
@@ -60,21 +54,23 @@ to go
 
   ; zombies attack humans if there are any on the same patch
   ask turtles with [infected = true] [
-    set energy energy - 1
+    set energy energy - energy-lost-zombie
     if energy <= 0 [ die ]
     if(any? turtles-here with [infected = false and isimmune = false]) [
       attack-human
     ]
   ]
 
+  ; humans attack zombies
   ask turtles with [infected = false] [
-    set energy energy - 1
+    set energy energy - energy-lost-human
     ; here they die
     if(any? turtles-here with [infected = true])[
       attack-zombies
     ]
   ]
 
+  ; humans reproduce
   ask turtles with [infected = false] [
     reproduce
   ]
@@ -107,10 +103,10 @@ to attack-zombies
   set minimum zombies
   ]
   ask turtles-here with [infected = true][
-    if(i < minimum and random  100 < clubbing-chance)[
+    if(i < minimum and random 100 < clubbing-chance)[
       die
     ]
-    set i i + 1
+    set i (i + 1)
   ]
 
 end
@@ -134,7 +130,7 @@ to attack-human
       ; transform the human into a zombie
       set infected true
       set color red
-      set energy start-energy
+      ;set energy start-energy
     ]
   ]
 end
@@ -154,29 +150,26 @@ to reproduce
       if(random 100  < chance-to-reproduce)[
         hatch 1 [
           ifelse(immunityFemale = true and immunityMale = true and random 100 < immune-percentage) [
+            ; create new immune human
             set isimmune true
             set color green
           ]
-          [
+          [ ; create new 'normal' human
             set isimmune false
             set color grey
           ]
           set hasreproduced true
+          set infected false
+          set energy start-energy
         ]
-        set hasreproduced true
-        set hasreproduced [true] of myself
+        set hasreproduced true  ; man has reproduced
+        set hasreproduced [true] of myself  ; woman has reproduced
         set stopping true
       ]
-      if(stopping = true)[
-        stop
-      ]
+      if(stopping = true)[ stop ]
     ]
   ]
 end
-
-
-
-
 
 
 
@@ -298,8 +291,9 @@ true
 true
 "" ""
 PENS
-"Humans" 1.0 0 -3026479 true "" "plot count turtles with [infected = false]"
+"Humans" 1.0 0 -11053225 true "" "plot count turtles with [infected = false]"
 "Zombies" 1.0 0 -2674135 true "" "plot count turtles with [infected = true]"
+"Immunes" 1.0 0 -13840069 true "" "plot count turtles with [infected = false and isimmune = true]"
 
 SLIDER
 12
@@ -364,7 +358,7 @@ start-energy
 start-energy
 0
 100
-42
+50
 1
 1
 NIL
@@ -379,7 +373,7 @@ energy-gained
 energy-gained
 0
 100
-22
+20
 1
 1
 NIL
@@ -394,7 +388,7 @@ immune-percentage
 immune-percentage
 0
 100
-7
+12
 1
 1
 NIL
@@ -435,7 +429,37 @@ clubbing-chance
 clubbing-chance
 0
 100
-11
+14
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+13
+390
+185
+423
+energy-lost-zombie
+energy-lost-zombie
+0
+50
+2
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+15
+436
+187
+469
+energy-lost-human
+energy-lost-human
+0
+50
+3
 1
 1
 NIL
