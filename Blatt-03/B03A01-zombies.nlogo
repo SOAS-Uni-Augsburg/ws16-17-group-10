@@ -60,15 +60,20 @@ to go
 
   ; zombies attack humans if there are any on the same patch
   ask turtles with [infected = true] [
+    set energy energy - 1
+    if energy <= 0 [ die ]
     if(any? turtles-here with [infected = false and isimmune = false]) [
       attack-human
     ]
-    set energy energy - 1
   ]
 
-  tick
-
-  check-death
+  ask turtles with [infected = false] [
+    set energy energy - 1
+    ; here they die
+    if(any? turtles-here with [infected = true])[
+      attack-zombies
+    ]
+  ]
 
   ask turtles with [infected = false] [
     reproduce
@@ -78,6 +83,8 @@ to go
   if count turtles = (((population-size - ((initial-zombie-percentage * population-size) / 100)) * immune-percentage) / 100) [
     stop
   ]
+
+  tick
 end
 
 
@@ -85,6 +92,27 @@ to move
   ; turn randomly left or right by at most 180° and move one step ahead
   right (random-float 360) - 180
   forward 1
+end
+
+; one human attacks one zombie
+to attack-zombies
+  let humans (count turtles-here with [infected = false])
+  let zombies (count turtles-here with [infected = true])
+  let i 0
+  let minimum 0
+
+  ifelse(humans < zombies)[
+    set minimum humans
+  ][
+  set minimum zombies
+  ]
+  ask turtles-here with [infected = true][
+    if(i < minimum and random  100 < clubbing-chance)[
+      die
+    ]
+    set i i + 1
+  ]
+
 end
 
 
@@ -98,7 +126,7 @@ to attack-human
       set i (i + 1)
     ]
   ]
-  let zombies-here (count turtles-here with [infected = false])
+  let zombies-here (count turtles-here with [infected = true])
   let j 0
   ask turtles-here with [infected = false and isimmune = false][ ;humans
     if j < zombies-here [
@@ -248,7 +276,7 @@ population-size
 population-size
 0
 500
-197
+500
 1
 1
 NIL
@@ -282,7 +310,7 @@ initial-zombie-percentage
 initial-zombie-percentage
 0
 100
-10
+25
 1
 1
 NIL
@@ -336,7 +364,7 @@ start-energy
 start-energy
 0
 100
-50
+42
 1
 1
 NIL
@@ -351,7 +379,7 @@ energy-gained
 energy-gained
 0
 100
-25
+22
 1
 1
 NIL
@@ -366,7 +394,7 @@ immune-percentage
 immune-percentage
 0
 100
-10
+7
 1
 1
 NIL
@@ -392,7 +420,22 @@ chance-to-reproduce
 chance-to-reproduce
 0
 100
-10
+5
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+12
+345
+202
+378
+clubbing-chance
+clubbing-chance
+0
+100
+11
 1
 1
 NIL
